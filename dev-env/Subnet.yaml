@@ -1,0 +1,57 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Provision of public subnet
+
+# パラメータ
+Parameters:
+  VPCId:
+    Type: String
+    Description: VPC id
+
+  AZ:
+    Type: String
+    Default: ap-northeast-1a
+    Description: Availability zone of public subnet
+
+  CIDRBlock:
+    Type: String
+    Description: CIDR of public subnet
+
+  IGWId:
+    Type: String
+    Description: Internet gateway id
+
+Resources:
+
+  # パブリックサブネット
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Ref AZ
+      VpcId: !Ref VPCId
+      CidrBlock: !Ref CIDRBlock
+
+  # パブリックサブネットのルートテーブル
+  PublicSubnetRT:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPCId
+
+  # IGWへのルーティング
+  PublicSubnetToInternet:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicSubnetRT
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref IGWId
+
+  # ルートテーブルをパブリックサブネットに関連付け
+  AssociatePublicSubnetRT:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      RouteTableId: !Ref PublicSubnetRT
+
+Outputs:
+  PublicSubnetId:
+    Value: !Ref PublicSubnet
+    Description: PublicSubnet id
