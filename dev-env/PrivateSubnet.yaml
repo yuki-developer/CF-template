@@ -1,0 +1,53 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Provision of private subnet
+
+# パラメータ
+Parameters:
+  VPCId:
+    Type: String
+    Description: VPC id
+
+  AZ:
+    Type: String
+    Default: ap-northeast-1a
+    Description: Availability zone of private subnet
+
+  CIDRBlock:
+    Type: String
+    Description: CIDR of private subnet
+
+  IGWId:
+    Type: String
+    Description: Internet gateway id
+
+Resources:
+
+  # プライベートサブネット
+  PrivateSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Ref AZ
+      VpcId: !Ref VPCId
+      CidrBlock: !Ref CIDRBlock
+
+  # プライベートサブネットのルートテーブル
+  PrivateSubnetRT:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPCId
+
+  # パブリックサブネットへのルーティング
+  PrivateSubnetToInternet:
+    Type: AWS::EC2::Route
+
+  # ルートテーブルをプライベートサブネットに関連付け
+  AssociatePublicSubnetRT:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet
+      RouteTableId: !Ref PrivateSubnetRT
+
+Outputs:
+  PublicSubnetId:
+    Value: !Ref PrivateSubnet
+    Description: PrivateSubnet id
