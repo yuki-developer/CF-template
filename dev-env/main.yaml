@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Provision of simple webserver
+
+Parameters: 
+  KeyName:
+    Description: The EC2 Key Pair to allow SSH access to the instance
+    Type: "AWS::EC2::KeyPair::KeyName"
+
+  MyIP:
+    Description: IP address allowed to access EC2
+    Type: String
+
+  VPCTemplateURL:
+    Description: URL of VPC Template file
+    Type: String
+
+  PublicSubnetTemplateURL:
+    Description: URL of Public Subnet Template file
+    Type: String
+
+  EC2TemplateURL:
+    Description: URL of EC2 Template file
+    Type: String
+
+Resources:
+
+  # VPCの作成
+  VPC:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Ref VPCTemplateURL
+      Parameters:
+        CIDRBlock: 10.0.0.0/16
+
+  # パブリックサブネットの作成
+  PublicSubnet:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Ref PublicSubnetTemplateURL
+      Parameters:
+        VPCId: !GetAtt VPC.Outputs.VPCId
+        AZ: ap-northeast-1a
+        CIDRBlock: 10.0.1.0/24
+        IGWId: !GetAtt VPC.Outputs.IGWId
+
+  # EC2の作成
+  EC2:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Ref EC2TemplateURL
+      Parameters: 
+        InstanceType: t2.micro
+        VPCId: !GetAtt VPC.Outputs.VPCId
+        SubnetId: !GetAtt PublicSubnet.Outputs.PublicSubnetId
+        MyIP: !Ref MyIP
+        KeyName: !Ref KeyName
+
+Outputs:
+  EC2PublicIP:
+    Value: !GetAtt EC2.Outputs.EC2PublicIP
+    Description: Public IP of EC2 instance

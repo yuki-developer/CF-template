@@ -1,0 +1,35 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Provision of VPC
+
+# パラメータ
+Parameters:
+  CIDRBlock:
+    Type: String
+    Description: CIDRBlock of VPC
+
+Resources:
+  # VPCの作成
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref CIDRBlock
+
+  # IGWの作成
+  IGW:
+    Type: AWS::EC2::InternetGateway
+
+  # IGWをVPCにアタッチ
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref IGW
+
+Outputs:
+  VPCId:
+    Value: !Ref VPC
+    Description: VPC id
+
+  IGWId:
+    Value: !Ref IGW
+    Description: IGW id
