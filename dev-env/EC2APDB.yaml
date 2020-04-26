@@ -1,0 +1,66 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Provision of EC2
+
+# パラメータ
+Parameters:
+  ImageId:
+    Type: String
+    Default: ami-ab1bd4d4
+    Description: Image id
+  InstanceType: 
+    Type: String
+    Default: t2.medium
+    Description: EC2 instance type.
+  VPCId:
+    Type: String
+    Description: ID for VPC.
+  SubnetId:
+    Type: String
+    Description: Subnet id on which EC2 instance locates. 
+  MyIP: 
+    Type: String
+    Description: IP address allowed to access(HTTP, SSH) to EC2 instance.
+  KeyName: 
+    Type: String
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the web server.
+
+Resources:
+  # EC2インスタンスの作成
+  EC2: 
+    Type: AWS::EC2::Instance
+    Properties: 
+      ImageId: !Ref ImageId
+      KeyName: !Ref KeyName
+      InstanceType: !Ref InstanceType
+      NetworkInterfaces: 
+        - AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          SubnetId: !Ref SubnetId
+          GroupSet:
+            - !Ref EC2SG
+      UserData: !Base64 |
+        #!/bin/bash
+        sudo yum install -y git
+
+  # EC2のセキュリティーグループの作成
+  EC2SG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow SSH and HTTP access only MyIP
+      VpcId: !Ref VPCId
+      SecurityGroupIngress:
+        # http
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: !Ref MyIP
+        # ssh
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref MyIP
+
+Outputs:
+  EC2PublicIP:
+    Value: !GetAtt EC2.PublicIp
+    Description: Public IP of EC2 instance
